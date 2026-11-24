@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-validate:
+    name: Build, benchmark, validate against NumPy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure (Release)
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Run benchmark
+        # Run from build/ so the 128x128 CSVs land where validate.py reads them.
+        working-directory: build
+        run: ./ai_benchmark
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install numpy
+
+      - name: Validate accuracy
+        # validate.py exits 0 even when the tolerance check fails, so gate on
+        # its PASSED line instead.
+        run: |
+          python tests/validate.py | tee validate.log
+          grep -q "Validation PASSED" validate.log

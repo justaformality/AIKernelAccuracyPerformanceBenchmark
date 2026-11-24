@@ -1,0 +1,14 @@
+# Build output (CMake files, the ai_benchmark binary, and the *.csv files it
+# writes for NumPy validation). Keep the empty folder so tests/validate.py
+# always has a build/ directory to read from.
+build/*
+!build/.gitkeep
+
+# Python
+__pycache__/
+.venv/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
