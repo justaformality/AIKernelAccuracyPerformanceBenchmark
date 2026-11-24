@@ -89,21 +89,19 @@ From the project root:
 python3 tests/validate.py
 ```
 
-EXAMPLE VALIDATION OUTPUT:
-```text
-Floating-Point Accuracy Validation
-----------------------------------
-Matrix multiplication max absolute error: 0.00000763
-Matrix multiplication max relative error: 0.01291928
-ReLU max absolute error: 0.00000668
-ReLU max relative error: 0.00580442
-Softmax max absolute error: 0.00002599
-Softmax max relative error: 0.49994466
+The script prints the max absolute and max relative error for each kernel, then `Validation PASSED.` or `Validation FAILED`. It exits with code 1 on failure, so CI fails on an accuracy regression.
 
-Validation PASSED.
-```
+**How pass/fail is decided:** every output element must satisfy `|cpp - numpy| <= atol + rtol * |numpy|` (`np.allclose`), with per-kernel tolerances defined in `TOLERANCES` in [`tests/validate.py`](tests/validate.py):
 
-Pass/fail is decided on absolute error (tolerance `1e-3`). Relative error is reported for information only.
+| Kernel | rtol | atol | Why |
+|---|---|---|---|
+| Matrix multiplication | 1e-4 | 1e-4 | Float32 has ~7 significant digits, and the C++ loop sums in a different order than NumPy |
+| ReLU | 1e-4 | 1e-4 | Same inputs as matmul |
+| Softmax | 1e-4 | 1e-12 | Probabilities go down to ~1e-14, so the absolute floor must be tiny |
+
+The "max relative error" line can still look large for matmul. That comes from elements whose true value is near zero, where relative error isn't meaningful, and the `atol` term covers those.
+
+**A note on an earlier bug:** previous versions reported a softmax max relative error of ~0.5. The kernel was correct. The CSVs were written with 8 fixed decimals (`std::fixed`), which rounds probabilities near 1e-8 by up to 50%. They're now written in scientific notation with `max_digits10` significant digits, which round-trips every float exactly.
 
 ---
 # **Benchmarking**

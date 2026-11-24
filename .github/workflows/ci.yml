@@ -30,8 +30,4 @@ jobs:
       - run: pip install numpy
 
       - name: Validate accuracy
-        # validate.py exits 0 even when the tolerance check fails, so gate on
-        # its PASSED line instead.
-        run: |
-          python tests/validate.py | tee validate.log
-          grep -q "Validation PASSED" validate.log
+        run: python tests/validate.py

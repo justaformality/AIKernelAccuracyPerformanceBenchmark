@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <iomanip>
+#include <limits>
 #include <random>
 #include <stdexcept>
 #include <cmath>
@@ -74,7 +75,12 @@ void save_matrix(
         throw std::runtime_error("Could not open file for writing.");
     }
 
-    file << std::fixed << std::setprecision(8);
+    // Scientific notation with max_digits10 (9 for float) round-trips every
+    // float exactly. std::fixed with 8 decimals rounded tiny values such as
+    // softmax probabilities near 1e-8 by up to 50%, which showed up in
+    // validate.py as a large relative error that the kernel never had.
+    file << std::scientific
+         << std::setprecision(std::numeric_limits<float>::max_digits10);
 
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
